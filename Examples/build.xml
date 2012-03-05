@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="JavaExamples" default="build" 
+	xmlns:ivy="antlib:org.apache.ivy.ant">
+
+	<property environment="env"/>
+
+	<property name="module.name" value="JavaExamples"/>
+	<property name="module.version" value="1.2"/>
+
+
+	<!-- Directory / File properties -->
+	<property name="source.dir" location="src"/>
+	<property name="java.source.dir" location="${source.dir}/java"/>
+	<property name="resources.source.dir" location="${source.dir}/resources"/>
+	<property name="release.source.dir" location="${source.dir}/release"/>
+
+	<property name="lib.dir" location="lib"/>
+	
+	<property name="dist.dir" location="dist"/>
+	<property name="classes.dir" location="${dist.dir}/classes"/>
+	<property name="test.classes.dir" location="dist/classes"/> <!-- Because tests are embedded in the main code. -->
+
+	
+	<property name="release.dir" location="${dist.dir}/release"/>
+	
+	<property name="module.jar" location="${release.dir}/${module.name}.jar"/>
+	<property name="release.zip" location="${dist.dir}/${module.name}-${module.version}.zip"/>
+
+
+	<!-- Ivy Repository properties -->
+	<property name="ivy-repository.dir" value="C:/Users/Basil/Dev/IvyRepository"/>
+	<property name="ivy-repository-pattern" 
+		value="${ivy-repository.dir}/[organisation]/[module]/[revision]/[artifact](-[classifier])-[revision].[ext]"/>
+
+	<!-- Ivy Configuration. It is itself located in the repository, but we need to configure it manually. -->
+	<property name="ivy.version" value="2.1.0-rc1"/>
+	<property name="ivy.dir" location="${ivy-repository.dir}/org.apache.ivy/ivy/${ivy.version}"/>
+    <path id="ivy.lib.path">
+		<fileset dir="${ivy.dir}" includes="ivy-${ivy.version}*.jar"/>
+	</path>
+	<taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
+	<ivy:configure file="${basedir}/ivysettings.xml" override="true"/>
+
+
+	<!-- Targets -->
+
+	<target name="init">
+		<record name="${basedir}/buildoutput.txt" loglevel="verbose" append="false"/>
+	</target>
+
+	<target name="clean" depends="init">
+		<delete dir="${dist.dir}"/>
+		<ivy:cleancache/>
+	</target>
+
+	<target name="resolve-dependencies" depends="init" description="Resolve dependencies for this project.">
+		<ivy:resolve/>
+		
+		<!--  For the report using outputpattern="[module]-[conf].[ext]" causes invalid links 
+		between configurations as links are built using default pattern apparently.
+		-->
+		<ivy:report todir="${dist.dir}" conf="*" graph="false" />
+		
+		<ivy:retrieve pattern="${lib.dir}/[artifact](-[classifier]).[ext]" conf="runtime" sync="true"/>
+	</target>
+
+	<target name="compile.pre" depends="init">
+		<!-- Example of using Ivy CachePath
+		<ivy:cachepath pathid="ivy.compile.classpath" conf="compile" />
+		-->
+
+		<path id="compile.classpath">
+			<fileset dir="${lib.dir}" includes="*.jar"/>
+		</path>
+	</target>
+
+	<target name="test.pre" depends="init">
+
+		<path id="runtests.classpath">
+				<pathelement location="${test.classes.dir}"/>
+				<pathelement location="${classes.dir}"/>
+				<fileset dir="${lib.dir}" includes="*.jar"/>
+		</path>
+	</target>
+
+	<target name="compile" depends="compile.pre">
+		<mkdir dir="${classes.dir}"/>
+		<javac debug="on" includeAntRuntime="false"
+			destdir="${classes.dir}"
+			classpathref="compile.classpath">
+			<src path="${java.source.dir}"/>
+		</javac>
+	</target>
+
+	<target name="test" depends="init, test.pre">
+		<property name="test.reports.dir" location="${dist.dir}/test-reports"/>
+		<mkdir dir="${test.reports.dir}"/>
+
+		<junit fork="yes" failureproperty="tests.failed">
+
+			<classpath refid="runtests.classpath"/>
+			<formatter type="brief" usefile="yes"/>
+			<formatter type="brief" usefile="false"/>
+
+			<batchtest fork="no" todir="${test.reports.dir}">
+				<fileset dir="${test.classes.dir}" includes="**/*Test.class" excludes="**/*$*.class **/Tests.class"/>
+			</batchtest>
+		</junit>
+		<fail message="Tests failed." if="tests.failed"/>
+	</target>
+
+	<target name="package.pre" depends="init">
+		<mkdir dir="${release.dir}"/>
+	</target>
+	
+	<target name="package-release-dir" depends="package.pre">
+		<copy todir="${release.dir}">
+			<fileset dir="${release.source.dir}"/>
+		</copy>
+
+		<copy todir="${release.dir}">
+			<fileset dir="${basedir}" includes=".classpath,.project,*.xml"/>
+		</copy>
+				
+		<copy todir="${release.dir}/src/java">
+			<fileset dir="${java.source.dir}"/>
+		</copy>
+	</target>
+
+	<target name="javadoc" depends="package.pre, package-release-dir">
+		<property name="javadoc.dir" location="${release.dir}/javadoc"/>
+		
+		<javadoc
+			destdir="${javadoc.dir}"
+		    use="true"
+			access="protected"
+			failOnError="true"
+			source="1.5"
+			linksource="yes"
+		    windowtitle="Java Examples API Documentation"
+			classpathref="compile.classpath"
+			overview="${release.dir}/src/java/com/basilv/examples/overview.html"
+			>
+		
+		    <fileset dir="${release.dir}/src/java" includes="**/*.java" defaultexcludes="yes"/>
+		
+		    <doctitle><![CDATA[<h1>Java Examples API Documentation</h1>]]></doctitle>
+		    <bottom><![CDATA[<small> Java Examples available from <a href="http://www.basilv.com/psd/software">http://www.basilv.com/psd/software</a>  Copyright &#169; 2009 by Basil Vandegriend. All Rights Reserved.</small>]]></bottom>
+		    
+		    <link href="http://java.sun.com/javase/6/docs/api/"/>
+		</javadoc>		
+	</target>
+
+	<target name="package" depends="package.pre, package-release-dir, javadoc">
+		<zip destfile="${release.zip}">
+			<zipfileset dir="${release.dir}" prefix="${module.name}-${module.version}"/>
+		</zip>
+	</target>
+
+	<target name="dist"
+		depends="init, compile, package"
+		description="Produces distributables: compiles and packages the release."/>
+
+	<target name="build"
+		depends="init, dist, test"
+		description="Produces distributables and tests."/>
+
+	<target name="all"
+		depends="init, clean, resolve-dependencies, build"
+		description="Cleans and builds."/>
+
+	
+	<!-- Target for maintenance of our Ivy Repository. -->
+
+	<macrodef name="do-install-from-m2-to-ivyrep">
+		<!--  These attributes are deliberately named the same as the ivy.xml file. -->
+		<attribute name="org"/>
+		<attribute name="name"/>
+		<attribute name="rev"/>
+		<attribute name="transitive" default="true"/>
+		<sequential>
+			<ivy:install from="maven2-repository" to="ivy-repository"
+		    	organisation="@{org}" module="@{name}" revision="@{rev}" transitive="@{transitive}" overwrite="true"/>
+			<!--  Use overwrite="true" because installing transitive dependencies is otherwise practically impossible.
+			I'd prefer an option to ignore already-installed modules rather than overwriting. -->
+		</sequential>
+	</macrodef>
+
+	<target name="install-from-m2-to-ivyrep" depends="init">
+	    <do-install-from-m2-to-ivyrep org="jdepend" name="jdepend" rev="2.9.1" transitive="true"/>
+	    <do-install-from-m2-to-ivyrep org="com.sun.xml.bind" name="jaxb-impl" rev="2.1.10" transitive="true"/>
+	    <do-install-from-m2-to-ivyrep org="log4j" name="log4j" rev="1.2.15" transitive="false"/>
+	    <do-install-from-m2-to-ivyrep org="org.antlr" name="antlr" rev="3.1.3" transitive="true"/>
+		<do-install-from-m2-to-ivyrep org="org.apache.ivy" name="ivy" rev="2.1.0-rc1" transitive="false"/>
+	    <do-install-from-m2-to-ivyrep org="org.hibernate" name="hibernate" rev="3.2.6.ga" transitive="false"/>
+	    <do-install-from-m2-to-ivyrep org="javax.servlet" name="servlet-api" rev="2.4" transitive="true"/>
+	    <do-install-from-m2-to-ivyrep org="junit" name="junit" rev="4.6" transitive="true"/>
+
+		<!--  Install fails due to some optional dependencies that cannot be found or downloaded, apparently
+			due to errors in the Maven repository. But these dependencies are not needed to compile or test.
+			It would be nice to be able to specify configurations to install, rather than all of them, which 
+			would be another way to resolve this issue.
+		 -->
+	    <do-install-from-m2-to-ivyrep org="org.springframework" name="spring" rev="2.5.6" transitive="true"/>
+
+	</target>
+
+</project>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="**/.svn/**/*" kind="src" path="src/java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/activation.jar"/>
+	<classpathentry kind="lib" path="lib/antlr-runtime.jar"/>
+	<classpathentry kind="lib" path="lib/antlr.jar"/>
+	<classpathentry kind="lib" path="lib/cglib-nodep.jar"/>
+	<classpathentry kind="lib" path="lib/commons-logging.jar"/>
+	<classpathentry kind="lib" path="lib/dom4j-sources.jar"/>
+	<classpathentry kind="lib" path="lib/dom4j.jar"/>
+	<classpathentry kind="lib" path="lib/hibernate-javadoc.jar"/>
+	<classpathentry kind="lib" path="lib/hibernate-sources.jar"/>
+	<classpathentry kind="lib" path="lib/hibernate.jar"/>
+	<classpathentry kind="lib" path="lib/jaxb-api-sources.jar"/>
+	<classpathentry kind="lib" path="lib/jaxb-api.jar"/>
+	<classpathentry kind="lib" path="lib/jaxb-impl-sources.jar"/>
+	<classpathentry kind="lib" path="lib/jaxb-impl.jar"/>
+	<classpathentry kind="lib" path="lib/jdepend.jar"/>
+	<classpathentry kind="lib" path="lib/junit-sources.jar"/>
+	<classpathentry kind="lib" path="lib/junit.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-sources.jar"/>
+	<classpathentry kind="lib" path="lib/log4j.jar"/>
+	<classpathentry kind="lib" path="lib/servlet-api-sources.jar"/>
+	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
+	<classpathentry kind="lib" path="lib/spring-java-config.jar"/>
+	<classpathentry kind="lib" path="lib/spring.jar"/>
+	<classpathentry kind="lib" path="lib/stax-api.jar"/>
+	<classpathentry kind="lib" path="lib/stringtemplate.jar"/>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>

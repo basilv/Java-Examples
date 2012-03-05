@@ -1,0 +1,19 @@
+<ivysettings>
+	<settings defaultResolver="trusted-resolvers" />
+ 
+	<resolvers>
+	
+		<chain name="trusted-resolvers" returnFirst="true">
+
+			<filesystem name="ivy-repository">
+				<artifact pattern="${ivy-repository-pattern}"/>
+				<ivy pattern="${ivy-repository-pattern}"/>
+			</filesystem>
+		
+		</chain>
+		
+		<ibiblio name="maven2-repository" m2compatible="true" />
+
+	</resolvers>
+
+</ivysettings>
