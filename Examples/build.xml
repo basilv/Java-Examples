@@ -128,7 +128,7 @@
 		</copy>
 	</target>
 
-	<target name="javadoc" depends="package.pre, package-release-dir">
+	<target name="javadoc" depends="compile.pre, package.pre, package-release-dir">
 		<property name="javadoc.dir" location="${release.dir}/javadoc"/>
 		
 		<javadoc
@@ -152,7 +152,8 @@
 		</javadoc>		
 	</target>
 
-	<target name="package" depends="package.pre, package-release-dir, javadoc">
+	<target name="package" depends="package.pre, package-release-dir, javadoc"
+		description="Create packaged zip for release">
 		<zip destfile="${release.zip}">
 			<zipfileset dir="${release.dir}" prefix="${module.name}-${module.version}"/>
 		</zip>
