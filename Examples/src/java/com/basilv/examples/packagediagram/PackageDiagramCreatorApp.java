@@ -5,59 +5,33 @@ import java.util.*;
 
 import jdepend.framework.*;
 
-public class PackageDiagramCreatorApp
-{
+public class PackageDiagramCreatorApp {
 
-  private static void generateImage(String fileName,
-    String graphVizDotFormattedGraph) throws IOException,
-    InterruptedException {
-    File graphFile = createFileWithContents(fileName
-      + ".txt", graphVizDotFormattedGraph);
-
-    // This requires the GraphViz software to be installed -
-    // see http://graphviz.org/
-    String imageFileLocation = fileName + ".png";
-    Runtime.getRuntime().exec(
-      "dot -v -Tpng " + graphFile.getName() + " -o "
-        + imageFileLocation);
-
-    System.out.println("Image file available at "
-      + new File(imageFileLocation).getAbsolutePath());
+  public static void main(String[] args) {
+    createPackageDependencyDiagram();
+    System.exit(0);
   }
-
-  private static File createFileWithContents(
-    String fileName, String graphVizDotFormattedGraph)
-    throws IOException {
-    File graphFile = new File(fileName);
-    FileWriter writer = new FileWriter(graphFile, false);
-    try {
-      writer.append(graphVizDotFormattedGraph);
-    } finally {
-      writer.close();
-    }
-    return graphFile;
-  }
-
-  private static String getGraphVizNodeForPackage(
-    JavaPackage javaPackage) {
-
-    String rootPackage = "com.basilv.examples.packagediagram";
-    String packageName = javaPackage.getName();
-    if (!packageName.startsWith(rootPackage)) {
-      return null;
-    }
-
-    return packageName.replace(".", "_");
+  
+  public static void createPackageDependencyDiagram() {
+    Collection<JavaPackage> packages = analyzePackages();
+    StringBuilder builder = generateGraph(packages);
+    generateImage("packages", builder.toString());
   }
 
   @SuppressWarnings("unchecked")
-  public static void createPackageDependencyDiagram()
-    throws Exception {
-
+  private static Collection<JavaPackage> analyzePackages() {
     JDepend jdepend = new JDepend();
-    jdepend.addDirectory("dist/classes");
+    try {
+      jdepend.addDirectory("dist/classes");
+    } catch (IOException e) {
+      throw new RuntimeException("Error adding directory for JDepend to analyze.", e);
+    }
     Collection<JavaPackage> packages = jdepend.analyze();
+    return packages;
+  }
 
+  private static StringBuilder generateGraph(
+    Collection<JavaPackage> packages) {
     StringBuilder builder = new StringBuilder();
     builder.append("digraph packages {").append("\n");
     builder.append("node [shape=box];").append("\n");
@@ -70,7 +44,9 @@ public class PackageDiagramCreatorApp
       }
       builder.append(packageNodeName).append("\n");
 
+      @SuppressWarnings("unchecked")
       Collection<JavaPackage> dependencies = javaPackage.getEfferents();
+      
       for (JavaPackage dependency : dependencies) {
         String dependencyNodeName = getGraphVizNodeForPackage(dependency);
         if (dependencyNodeName == null
@@ -88,12 +64,54 @@ public class PackageDiagramCreatorApp
       }
     }
     builder.append("}\n");
-
-    generateImage("packages", builder.toString());
+    return builder;
   }
 
-  public static void main(String[] args) throws Exception {
-    createPackageDependencyDiagram();
-    System.exit(0);
+  private static String getGraphVizNodeForPackage(
+    JavaPackage javaPackage) {
+
+    String rootPackage = "com.basilv.examples.packagediagram";
+    String packageName = javaPackage.getName();
+    if (!packageName.startsWith(rootPackage)) {
+      return null;
+    }
+
+    return packageName.replace(".", "_");
   }
+
+  private static void generateImage(String fileName,
+    String graphVizDotFormattedGraph) {
+    try {
+      File graphFile = createFileWithContents(fileName
+        + ".txt", graphVizDotFormattedGraph);
+
+      // This requires the GraphViz software to be installed -
+      // see http://graphviz.org/
+      String imageFileLocation = fileName + ".png";
+      Runtime.getRuntime().exec(
+        "dot -v -Tpng " + graphFile.getName() + " -o "
+          + imageFileLocation);
+
+      System.out.println("Image file available at "
+        + new File(imageFileLocation).getAbsolutePath());
+    } catch (IOException e) {
+      throw new RuntimeException("Error generating image " + fileName, e);
+    }
+  }
+
+  private static File createFileWithContents(
+    String fileName, String graphVizDotFormattedGraph)
+    throws IOException {
+    File graphFile = new File(fileName);
+    FileWriter writer = new FileWriter(graphFile, false);
+    try {
+      writer.append(graphVizDotFormattedGraph);
+    } finally {
+      writer.close();
+    }
+    return graphFile;
+  }
+
 }
+
+
